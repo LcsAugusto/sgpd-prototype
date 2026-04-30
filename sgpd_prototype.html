@@ -1,1 +1,331 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>SGPD — Sistema de Gestão de Processos Digitais</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg: #0f0f13;
+    --surface: #18181f;
+    --surface2: #22222c;
+    --border: #2e2e3a;
+    --accent: #5b6af7;
+    --accent2: #3ecf8e;
+    --warn: #f59e0b;
+    --danger: #ef4444;
+    --text: #e8e8f0;
+    --text2: #8888a0;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  .screen { display: none; min-height: 100vh; flex-direction: column; }
+  .screen.active { display: flex; }
+
+  #login {
+    align-items: center;
+    justify-content: center;
+    padding: 24px 16px;
+    background: radial-gradient(ellipse at 30% 50%, #1a1a2e 0%, var(--bg) 60%);
+  }
+
+  .login-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px 24px;
+    width: 100%;
+    max-width: 400px;
+    animation: fadeUp .4s ease;
+  }
+
+  .logo { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--accent); letter-spacing: .1em; text-transform: uppercase; margin-bottom: 24px; }
+  .login-card h1 { font-size: 20px; font-weight: 600; margin-bottom: 4px; }
+  .login-card p { font-size: 13px; color: var(--text2); margin-bottom: 24px; }
+
+  .role-tabs { display: flex; gap: 8px; margin-bottom: 20px; }
+  .role-tab { flex: 1; padding: 10px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: transparent; color: var(--text2); font-family: 'DM Sans', sans-serif; font-size: 13px; cursor: pointer; transition: all .2s; }
+  .role-tab.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-size: 11px; color: var(--text2); margin-bottom: 6px; font-weight: 500; letter-spacing: .03em; }
+  .field input { width: 100%; padding: 12px 14px; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 14px; outline: none; transition: border-color .2s; -webkit-appearance: none; }
+  .field input:focus { border-color: var(--accent); }
+
+  .btn { padding: 12px 16px; border-radius: var(--radius-sm); border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; cursor: pointer; transition: all .2s; width: 100%; }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-sm { width: auto; padding: 8px 14px; font-size: 13px; }
+  .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text2); }
+  .btn-success { background: var(--accent2); color: #0f0f13; }
+
+  #dashboard, #funcionario { flex-direction: column; }
+
+  .topnav { background: var(--surface); border-bottom: 1px solid var(--border); padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50; }
+  .topnav-logo { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--accent); letter-spacing: .1em; text-transform: uppercase; }
+  .topnav-user { display: flex; align-items: center; gap: 8px; }
+
+  .avatar { width: 30px; height: 30px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; flex-shrink: 0; }
+  .user-name { font-size: 13px; font-weight: 500; }
+  .user-role { font-size: 11px; color: var(--text2); }
+
+  .bottomnav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--surface); border-top: 1px solid var(--border); display: flex; z-index: 50; }
+  .bottomnav-item { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 10px 8px; font-size: 10px; color: var(--text2); cursor: pointer; transition: color .2s; gap: 4px; }
+  .bottomnav-item.active { color: var(--accent); }
+  .bottomnav-icon { font-size: 18px; }
+
+  .main { flex: 1; padding: 20px 16px; padding-bottom: 80px; overflow-y: auto; }
+  .page-header { margin-bottom: 20px; }
+  .page-title { font-size: 18px; font-weight: 600; }
+  .page-sub { font-size: 12px; color: var(--text2); margin-top: 3px; }
+
+  .stats-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 20px; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
+  .stat-label { font-size: 11px; color: var(--text2); margin-bottom: 6px; }
+  .stat-value { font-size: 26px; font-weight: 600; font-family: 'DM Mono', monospace; }
+  .stat-value.accent { color: var(--accent); }
+  .stat-value.success { color: var(--accent2); }
+  .stat-value.warn { color: var(--warn); }
+
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .section-title { font-size: 14px; font-weight: 600; }
+
+  .task-item { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; margin-bottom: 10px; }
+  .task-item-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+  .task-item-title { font-size: 13px; font-weight: 500; flex: 1; }
+  .task-item-meta { font-size: 11px; color: var(--text2); margin-bottom: 4px; }
+  .task-item-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); flex-wrap: wrap; gap: 8px; }
+
+  .badge { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; white-space: nowrap; }
+  .badge-pending { background: rgba(245,158,11,.15); color: var(--warn); }
+  .badge-progress { background: rgba(91,106,247,.15); color: var(--accent); }
+  .badge-done { background: rgba(62,207,142,.15); color: var(--accent2); }
+
+  .priority-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 5px; }
+  .p-high { background: var(--danger); }
+  .p-med { background: var(--warn); }
+  .p-low { background: var(--accent2); }
+
+  .select-status { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 12px; padding: 6px 10px; outline: none; cursor: pointer; -webkit-appearance: none; }
+
+  .chip { display: inline-flex; align-items: center; padding: 3px 8px; background: var(--surface2); border-radius: 20px; font-size: 11px; color: var(--text2); font-family: 'DM Mono', monospace; }
+
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.7); backdrop-filter: blur(4px); z-index: 100; align-items: flex-end; justify-content: center; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 16px 16px 0 0; padding: 24px 20px; width: 100%; max-width: 600px; animation: slideUp .3s ease; max-height: 90vh; overflow-y: auto; }
+  .modal-handle { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 20px; }
+  .modal h2 { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+  .modal p { font-size: 13px; color: var(--text2); margin-bottom: 20px; }
+  .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+
+  .toast { position: fixed; bottom: 72px; left: 16px; right: 16px; background: var(--surface); border: 1px solid var(--accent2); border-radius: var(--radius); padding: 12px 16px; font-size: 13px; display: none; align-items: center; gap: 10px; z-index: 200; animation: fadeUp .3s ease; }
+  .toast.show { display: flex; }
+
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+</style>
+</head>
+<body>
+
+<div class="screen active" id="login">
+  <div class="login-card">
+    <div class="logo">SGPD · v1.0</div>
+    <h1>Bem-vindo de volta</h1>
+    <p>Sistema de Gestão de Processos Digitais</p>
+    <div class="role-tabs">
+      <button class="role-tab active" onclick="setRole('gestor', this)">Gestor</button>
+      <button class="role-tab" onclick="setRole('funcionario', this)">Funcionário</button>
+    </div>
+    <div class="field"><label>E-MAIL</label><input type="email" value="gestor@sgpd.com"/></div>
+    <div class="field"><label>SENHA</label><input type="password" value="••••••••"/></div>
+    <button class="btn btn-primary" onclick="doLogin()" style="margin-top:8px">Entrar no sistema</button>
+  </div>
+</div>
+
+<div class="screen" id="dashboard">
+  <div class="topnav">
+    <div class="topnav-logo">SGPD</div>
+    <div class="topnav-user">
+      <div><div class="user-name">Ana Gestora</div><div class="user-role">Gestor</div></div>
+      <div class="avatar">G</div>
+    </div>
+  </div>
+  <main class="main">
+    <div id="tab-overview">
+      <div class="page-header"><div class="page-title">Visão geral</div><div class="page-sub">Acompanhe as tarefas em tempo real</div></div>
+      <div class="stats-row">
+        <div class="stat-card"><div class="stat-label">Total</div><div class="stat-value accent">12</div></div>
+        <div class="stat-card"><div class="stat-label">Pendentes</div><div class="stat-value warn">4</div></div>
+        <div class="stat-card"><div class="stat-label">Em execução</div><div class="stat-value accent">5</div></div>
+        <div class="stat-card"><div class="stat-label">Concluídas</div><div class="stat-value success">3</div></div>
+      </div>
+      <div class="section-header"><div class="section-title">Tarefas recentes</div><button class="btn btn-primary btn-sm" onclick="openModal()">+ Nova</button></div>
+      <div class="task-item"><div class="task-item-top"><div class="task-item-title">Atualizar relatório mensal</div><span class="badge badge-progress">Em execução</span></div><div class="task-item-meta"><span class="priority-dot p-high"></span>Alta · Carlos F. · 30/04/2026</div></div>
+      <div class="task-item"><div class="task-item-top"><div class="task-item-title">Revisar contratos Q2</div><span class="badge badge-pending">Pendente</span></div><div class="task-item-meta"><span class="priority-dot p-med"></span>Média · Marina S. · 02/05/2026</div></div>
+      <div class="task-item"><div class="task-item-top"><div class="task-item-title">Onboarding novo funcionário</div><span class="badge badge-done">Concluída</span></div><div class="task-item-meta"><span class="priority-dot p-low"></span>Baixa · João P. · 28/04/2026</div></div>
+      <div class="task-item"><div class="task-item-top"><div class="task-item-title">Auditoria de processos internos</div><span class="badge badge-pending">Pendente</span></div><div class="task-item-meta"><span class="priority-dot p-high"></span>Alta · Carlos F. · 05/05/2026</div></div>
+    </div>
+    <div id="tab-tasks" style="display:none">
+      <div class="page-header"><div class="page-title">Tarefas</div><div class="page-sub">Cadastre e gerencie tarefas</div></div>
+      <div class="section-header"><div class="section-title">Todas as tarefas</div><button class="btn btn-primary btn-sm" onclick="openModal()">+ Nova</button></div>
+      <div class="task-item"><div class="task-item-top"><span class="chip">#001</span><span class="badge badge-progress">Em execução</span></div><div class="task-item-title" style="margin-top:8px">Atualizar relatório mensal</div><div class="task-item-meta">Carlos F. · 30/04/2026</div></div>
+      <div class="task-item"><div class="task-item-top"><span class="chip">#002</span><span class="badge badge-pending">Pendente</span></div><div class="task-item-title" style="margin-top:8px">Revisar contratos Q2</div><div class="task-item-meta">Marina S. · 02/05/2026</div></div>
+      <div class="task-item"><div class="task-item-top"><span class="chip">#003</span><span class="badge badge-done">Concluída</span></div><div class="task-item-title" style="margin-top:8px">Onboarding novo funcionário</div><div class="task-item-meta">João P. · 28/04/2026</div></div>
+      <div class="task-item"><div class="task-item-top"><span class="chip">#004</span><span class="badge badge-pending">Pendente</span></div><div class="task-item-title" style="margin-top:8px">Auditoria de processos internos</div><div class="task-item-meta">Carlos F. · 05/05/2026</div></div>
+    </div>
+    <div id="tab-team" style="display:none">
+      <div class="page-header"><div class="page-title">Equipe</div><div class="page-sub">Carga de trabalho por funcionário</div></div>
+      <div class="stats-row" style="grid-template-columns:1fr">
+        <div class="stat-card"><div class="stat-label">Carlos F.</div><div class="stat-value warn">2</div><div style="font-size:11px;color:var(--text2);margin-top:4px">tarefas ativas</div></div>
+        <div class="stat-card"><div class="stat-label">Marina S.</div><div class="stat-value accent">2</div><div style="font-size:11px;color:var(--text2);margin-top:4px">tarefas ativas</div></div>
+        <div class="stat-card"><div class="stat-label">João P.</div><div class="stat-value success">0</div><div style="font-size:11px;color:var(--text2);margin-top:4px">tarefas ativas</div></div>
+      </div>
+    </div>
+  </main>
+  <nav class="bottomnav">
+    <div class="bottomnav-item active" onclick="showTab('tab-overview', this)"><span class="bottomnav-icon">▦</span>Geral</div>
+    <div class="bottomnav-item" onclick="showTab('tab-tasks', this)"><span class="bottomnav-icon">✓</span>Tarefas</div>
+    <div class="bottomnav-item" onclick="showTab('tab-team', this)"><span class="bottomnav-icon">◎</span>Equipe</div>
+    <div class="bottomnav-item" onclick="logout()"><span class="bottomnav-icon">⏻</span>Sair</div>
+  </nav>
+</div>
+
+<div class="screen" id="funcionario">
+  <div class="topnav">
+    <div class="topnav-logo">SGPD</div>
+    <div class="topnav-user">
+      <div><div class="user-name">Carlos F.</div><div class="user-role">Funcionário</div></div>
+      <div class="avatar" style="background:var(--accent2);color:#0f0f13">C</div>
+    </div>
+  </div>
+  <main class="main">
+    <div class="page-header"><div class="page-title">Minhas tarefas</div><div class="page-sub">Atualize o status das suas atividades</div></div>
+    <div class="task-item">
+      <div class="task-item-top"><div class="task-item-title">Atualizar relatório mensal</div><span class="badge badge-progress">Em execução</span></div>
+      <div class="task-item-meta"><span class="priority-dot p-high"></span>Alta · Prazo: 30/04/2026</div>
+      <div style="font-size:12px;color:var(--text2);margin-top:6px">Consolidar dados do mês de abril e gerar relatório.</div>
+      <div class="task-item-footer">
+        <select class="select-status" onchange="updateStatus(this)"><option value="progress" selected>Em execução</option><option value="done">Concluída</option></select>
+        <button class="btn btn-success btn-sm" onclick="concludeTask(this)">Registrar conclusão</button>
+      </div>
+    </div>
+    <div class="task-item">
+      <div class="task-item-top"><div class="task-item-title">Auditoria de processos internos</div><span class="badge badge-pending">Pendente</span></div>
+      <div class="task-item-meta"><span class="priority-dot p-high"></span>Alta · Prazo: 05/05/2026</div>
+      <div style="font-size:12px;color:var(--text2);margin-top:6px">Revisar e documentar os processos do departamento.</div>
+      <div class="task-item-footer">
+        <select class="select-status" onchange="updateStatus(this)"><option value="pending" selected>Pendente</option><option value="progress">Em execução</option><option value="done">Concluída</option></select>
+        <button class="btn btn-primary btn-sm" onclick="startTask(this)">Iniciar tarefa</button>
+      </div>
+    </div>
+  </main>
+  <nav class="bottomnav">
+    <div class="bottomnav-item active"><span class="bottomnav-icon">✓</span>Tarefas</div>
+    <div class="bottomnav-item" onclick="logout()"><span class="bottomnav-icon">⏻</span>Sair</div>
+  </nav>
+</div>
+
+<div class="modal-overlay" id="modal" onclick="closeModalOutside(event)">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h2>Nova tarefa</h2>
+    <p>Preencha os dados para cadastrar e atribuir</p>
+    <div class="field"><label>TÍTULO</label><input type="text" placeholder="Ex: Revisar relatório" id="task-title"/></div>
+    <div class="field"><label>DESCRIÇÃO</label><input type="text" placeholder="Descreva a tarefa" id="task-desc"/></div>
+    <div class="field"><label>PRAZO</label><input type="date" id="task-date"/></div>
+    <div class="field"><label>RESPONSÁVEL</label><select class="select-status" style="width:100%;padding:12px 14px" id="task-resp"><option>Carlos F.</option><option>Marina S.</option><option>João P.</option></select></div>
+    <div class="modal-actions">
+      <button class="btn btn-outline btn-sm" onclick="closeModal()" style="flex:1">Cancelar</button>
+      <button class="btn btn-primary btn-sm" onclick="saveTask()" style="flex:2">Cadastrar e atribuir</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"><span style="color:var(--accent2)">✓</span><span id="toast-msg">Operação realizada!</span></div>
+
+<script>
+  let currentRole = 'gestor';
+  function setRole(role, btn) {
+    currentRole = role;
+    document.querySelectorAll('.role-tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelector('#login input[type="email"]').value = role === 'gestor' ? 'gestor@sgpd.com' : 'funcionario@sgpd.com';
+  }
+  function doLogin() {
+    document.getElementById('login').classList.remove('active');
+    document.getElementById(currentRole === 'gestor' ? 'dashboard' : 'funcionario').classList.add('active');
+    showToast('Login realizado com sucesso!');
+  }
+  function logout() {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById('login').classList.add('active');
+    showToast('Sessão encerrada.');
+  }
+  function showTab(tabId, navEl) {
+    document.querySelectorAll('#dashboard .main > div').forEach(t => t.style.display = 'none');
+    document.getElementById(tabId).style.display = 'block';
+    document.querySelectorAll('#dashboard .bottomnav-item').forEach(n => n.classList.remove('active'));
+    navEl.classList.add('active');
+  }
+  function openModal() { document.getElementById('modal').classList.add('open'); }
+  function closeModal() { document.getElementById('modal').classList.remove('open'); }
+  function closeModalOutside(e) { if (e.target === document.getElementById('modal')) closeModal(); }
+  function saveTask() {
+    const title = document.getElementById('task-title').value;
+    const resp = document.getElementById('task-resp').value;
+    if (!title) { showToast('Preencha o título!'); return; }
+    closeModal();
+    showToast('Tarefa atribuída a ' + resp + '!');
+    document.getElementById('task-title').value = '';
+    document.getElementById('task-desc').value = '';
+  }
+  function updateStatus(sel) {
+    const card = sel.closest('.task-item');
+    const badge = card.querySelector('.badge');
+    const map = { pending: ['badge-pending','Pendente'], progress: ['badge-progress','Em execução'], done: ['badge-done','Concluída'] };
+    const [cls, label] = map[sel.value];
+    badge.className = 'badge ' + cls;
+    badge.textContent = label;
+    showToast('Status atualizado!');
+  }
+  function startTask(btn) {
+    const card = btn.closest('.task-item');
+    const badge = card.querySelector('.badge');
+    const sel = card.querySelector('.select-status');
+    badge.className = 'badge badge-progress';
+    badge.textContent = 'Em execução';
+    sel.value = 'progress';
+    btn.textContent = 'Registrar conclusão';
+    btn.className = 'btn btn-success btn-sm';
+    btn.onclick = function() { concludeTask(this); };
+    showToast('Tarefa iniciada!');
+  }
+  function concludeTask(btn) {
+    const card = btn.closest('.task-item');
+    card.querySelector('.badge').className = 'badge badge-done';
+    card.querySelector('.badge').textContent = 'Concluída';
+    btn.style.display = 'none';
+    showToast('Tarefa concluída e registrada!');
+  }
+  function showToast(msg) {
+    const toast = document.getElementById('toast');
+    document.getElementById('toast-msg').textContent = msg;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 3000);
+  }
+</script>
+</body>
+</html>
 
